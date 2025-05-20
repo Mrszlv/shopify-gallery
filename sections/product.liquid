@@ -1,0 +1,158 @@
+{% comment %}
+  Цей шаблон використовується для сторінки продукту:
+  - показує зображення
+  - фільтрацію за кольором
+  - форму покупки
+{% endcomment %}
+
+<style>
+.product-images{
+  padding:10px;
+  background-color: #fff;
+  margin: 0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.product-image{
+  border-radius:8px;
+  width:300px;
+  height:300px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+  .product-details-wrapper {
+    background-color: #f0f8ff;
+    padding: 20px 30px;
+    margin: 40px auto;
+    border-radius: 12px;
+    max-width: 800px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .product-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .product-price {
+    font-size: 20px;
+    color: #4caf50;
+    margin-bottom: 10px;
+  }
+
+  .product-description {
+    color: #555;
+    margin-bottom: 20px;
+  }
+
+  .product-color label {
+    font-weight: 600;
+    margin-right: 8px;
+  }
+
+  .product-color select,
+  .product-form select,
+  .product-form input[type="text"] {
+    padding: 8px 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 12px;
+    margin-right: 10px;
+  }
+
+  .product-form input[type="submit"] {
+    background-color: #0077cc;
+    color: white;
+    padding: 10px 16px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .product-form input[type="submit"]:hover {
+    background-color: #005fa3;
+  }
+
+  @media screen and (min-width: 768px) {
+    .product-images{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+  }
+
+    @media screen and (min-width: 1024px) {
+    .product-images{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      
+    }
+  }
+</style>
+
+
+<div class="product-images">
+  {% for image in product.images %}
+    {% render 'image', class: 'product-image', image: image %}
+  {% endfor %}
+</div>
+
+
+
+<div class="product-details-wrapper">
+  <div class="product-info">
+    <h1 class="product-title">{{ product.title }}</h1>
+    <p class="product-price">{{ product.price | money }}</p>
+    <p class="product-description">{{ product.description }}</p>
+  </div>
+
+  {% if product.options_by_name['Color'] %}
+    <div class="product-color">
+      <label for="Color">Color:</label>
+      <select name="options[Color]" id="Color">
+        {% for value in product.options_by_name['Color'].values %}
+          <option value="{{ value | escape }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endif %}
+
+  <div class="product-form">
+    {% form 'product', product %}
+      {% assign current_variant = product.selected_or_first_available_variant %}
+      <select name="id">
+        {% for variant in product.variants %}
+          <option
+            value="{{ variant.id }}"
+            {% if variant == current_variant %}
+              selected="selected"
+            {% endif %}
+          >
+            {{ variant.title }} - {{ variant.price | money }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <input type="text" name="quantity" min="1" value="1">
+      <input type="submit" value="Add to cart">
+      {{ form | payment_button }}
+    {% endform %}
+  </div>
+</div>
+
+
+{% schema %}
+{
+  "name": "t:general.product",
+  "settings": [],
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  }
+}
+{% endschema %}

@@ -1,0 +1,111 @@
+{% comment %}
+  Динамічний акордеон з метафілідів продукту
+{% endcomment %}
+
+<style>
+.accordion-container {
+  width: 100%;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+.accordion-item {
+  border-bottom: 1px solid #ddd;
+}
+.accordion-header {
+  cursor: pointer;
+  padding: 15px 20px;
+  background-color: #f2f2f2;
+  font-weight: bold;
+  position: relative;
+}
+.accordion-header::after {
+  content: '+';
+  position: absolute;
+  right: 20px;
+  font-size: 20px;
+}
+.accordion-header.active::after {
+  content: '-';
+}
+.accordion-content {
+  display: none;
+  padding: 0 20px 20px;
+  background-color: #fff;
+  animation: slideDown 0.3s ease-out forwards;
+}
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+
+<div class="accordion-container" data-multiple="{{ section.settings.allow_multiple }}">
+{% assign titles = product.metafields.custom.accordion_title_1 | split: '|' %}
+{% assign descriptions = product.metafields.custom.accordion_content_1 | split: '|' %}
+
+
+  {% for title in titles %}
+    {% assign description = descriptions[forloop.index0] %}
+    {% if title != blank and description != blank %}
+      <div class="accordion-item">
+        <div class="accordion-header">{{ title }}</div>
+        <div class="accordion-content">
+          <p>{{ description }}</p>
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const container = document.querySelector('.accordion-container');
+    const multiple = container?.dataset?.multiple === 'true';
+    const headers = container.querySelectorAll('.accordion-header');
+
+    headers.forEach(header => {
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        const isOpen = header.classList.contains('active');
+
+        if (!multiple) {
+          headers.forEach(h => {
+            h.classList.remove('active');
+            h.nextElementSibling.style.display = 'none';
+          });
+        }
+
+        if (!isOpen || multiple) {
+          header.classList.toggle('active');
+          content.style.display = isOpen ? 'none' : 'block';
+        }
+      });
+    });
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Product Accordion",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "allow_multiple",
+      "label": "Дозволити відкривати кілька елементів",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "Accordion from Metafields",
+      "category": "Product"
+    }
+  ]
+}
+{% endschema %}

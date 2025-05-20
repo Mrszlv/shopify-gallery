@@ -1,0 +1,195 @@
+{% comment %}
+  Секція: Swiper галерея з автоматичною фільтрацією за варіантом
+{% endcomment %}
+
+<style>
+  .product-gallery {
+    padding: 40px 0;
+    background-color: #f8f8f8;
+  }
+
+  .product-gallery .swiper {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+
+  .product-gallery .swiper-slide img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .product-gallery .swiper-slide img:hover {
+    transform: scale(1.02);
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    color: #000;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: all 0.2s ease;
+  }
+
+  .swiper-button-prev:hover,
+  .swiper-button-next:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  .swiper-pagination-bullet {
+    background: #888;
+    opacity: 1;
+  }
+
+  .swiper-pagination-bullet-active {
+    background: #000;
+  }
+</style>
+
+<div class="product-gallery">
+  <div class="swiper mySwiper">
+    <div class="swiper-wrapper">
+      {% for media in product.media %}
+        {% if media.media_type == 'image' %}
+          <div 
+            class="swiper-slide" 
+            data-color="{{ media.alt | downcase }}"
+          >
+            <img 
+              src="{{ media.preview_image | image_url: width: 800 }}"
+              alt="{{ media.alt }}"
+              loading="lazy"
+            >
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if section.settings.show_pagination %}
+      <div class="swiper-pagination"></div>
+    {% endif %}
+    {% if section.settings.show_navigation %}
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    window.swiper = new Swiper(".mySwiper", {
+      slidesPerView: {{ section.settings.slides_mobile }},
+      spaceBetween: {{ section.settings.space_between }},
+      pagination: {
+        el: ".swiper-pagination",
+        clickable: true,
+        enabled: {{ section.settings.show_pagination | json }},
+      },
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev",
+      },
+      breakpoints: {
+        768: { slidesPerView: {{ section.settings.slides_tablet }} },
+        1024: { slidesPerView: {{ section.settings.slides_desktop }} }
+      }
+    });
+
+    const colorSelect = document.querySelector('[name="options[Color]"]');
+    const slides = document.querySelectorAll(".swiper-slide");
+
+    function updateSlides(selectedColor) {
+      slides.forEach(slide => {
+        const color = slide.dataset.color;
+        if (!color || selectedColor === 'all' || selectedColor === '') {
+          slide.style.display = 'block';
+        } else {
+          slide.style.display = (color === selectedColor) ? 'block' : 'none';
+        }
+      });
+      swiper.update();
+    }
+
+    if (colorSelect) {
+      colorSelect.addEventListener("change", () => {
+        const selectedColor = colorSelect.value.toLowerCase();
+        updateSlides(selectedColor);
+      });
+
+      // Запуск при завантаженні
+      updateSlides(colorSelect.value.toLowerCase());
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Product Gallery Swiper",
+  "settings": [
+    {
+      "type": "range",
+      "id": "slides_mobile",
+      "label": "Slides (mobile)",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "slides_tablet",
+      "label": "Slides (tablet)",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "slides_desktop",
+      "label": "Slides (desktop)",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "space_between",
+      "label": "Space between",
+      "min": 0,
+      "max": 40,
+      "step": 5,
+      "default": 20
+    },
+    {
+      "type": "checkbox",
+      "id": "show_pagination",
+      "label": "Show pagination",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_navigation",
+      "label": "Show navigation",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "Swiper Gallery",
+      "category": "Custom"
+    }
+  ]
+}
+{% endschema %}
