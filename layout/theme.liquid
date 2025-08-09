@@ -12,11 +12,16 @@
 
     {{ content_for_header }}
 
-    <!-- Swiper CSS -->
+
+<!-- Swiper styles -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
-<!-- Swiper JS — НЕ module -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<!-- Swiper script -->
+<script type="module">
+  import Swiper from 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.mjs';
+  window.Swiper = Swiper;
+</script>
+
 
   </head>
 
