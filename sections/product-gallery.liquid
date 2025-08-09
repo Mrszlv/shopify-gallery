@@ -22,6 +22,7 @@
     height: 300px;
     object-fit: cover;
     transition: transform 0.3s ease;
+    display: block;
   }
 
   .product-gallery .swiper-slide img:hover {
@@ -46,14 +47,8 @@
     color: #fff;
   }
 
-  .swiper-pagination-bullet {
-    background: #888;
-    opacity: 1;
-  }
-
-  .swiper-pagination-bullet-active {
-    background: #000;
-  }
+  .swiper-pagination-bullet { background: #888; opacity: 1; }
+  .swiper-pagination-bullet-active { background: #000; }
 </style>
 
 <div class="product-gallery">
@@ -61,15 +56,17 @@
     <div class="swiper-wrapper">
       {% for media in product.media %}
         {% if media.media_type == 'image' %}
-          <div 
-            class="swiper-slide" 
-            data-color="{{ media.alt | downcase }}"
-          >
-            <img 
-              src="{{ media.preview_image | image_url: width: 800 }}"
-              alt="{{ media.alt }}"
-              loading="lazy"
-            >
+          <div class="swiper-slide" data-color="{{ media.alt | downcase | strip }}">
+            {{
+              media
+              | image_url: width: 1200
+              | image_tag:
+                  alt: media.alt,
+                  loading: 'lazy',
+                  decoding: 'async',
+                  sizes: '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw',
+                  widths: '400,600,800,1000,1200'
+            }}
           </div>
         {% endif %}
       {% endfor %}
@@ -90,44 +87,36 @@
     window.swiper = new Swiper(".mySwiper", {
       slidesPerView: {{ section.settings.slides_mobile }},
       spaceBetween: {{ section.settings.space_between }},
-      pagination: {
-        el: ".swiper-pagination",
-        clickable: true,
-        enabled: {{ section.settings.show_pagination | json }},
-      },
-      navigation: {
-        nextEl: ".swiper-button-next",
-        prevEl: ".swiper-button-prev",
-      },
+      {% if section.settings.show_pagination %}
+      pagination: { el: ".swiper-pagination", clickable: true },
+      {% endif %}
+      {% if section.settings.show_navigation %}
+      navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+      {% endif %}
       breakpoints: {
-        768: { slidesPerView: {{ section.settings.slides_tablet }} },
+        768:  { slidesPerView: {{ section.settings.slides_tablet }} },
         1024: { slidesPerView: {{ section.settings.slides_desktop }} }
       }
     });
 
     const colorSelect = document.querySelector('[name="options[Color]"]');
-    const slides = document.querySelectorAll(".swiper-slide");
+    const slides = Array.from(document.querySelectorAll(".swiper-slide"));
 
     function updateSlides(selectedColor) {
+      const color = (selectedColor || '').toLowerCase().trim();
       slides.forEach(slide => {
-        const color = slide.dataset.color;
-        if (!color || selectedColor === 'all' || selectedColor === '') {
-          slide.style.display = 'block';
-        } else {
-          slide.style.display = (color === selectedColor) ? 'block' : 'none';
-        }
+        const slideColor = (slide.dataset.color || '').toLowerCase().trim();
+        const show = !color || color === 'all' || slideColor === color;
+        slide.style.display = show ? 'block' : 'none';
       });
+      // Перерахувати розмітку Swiper після приховування/показу
       swiper.update();
+      swiper.slideTo(0, 0);
     }
 
     if (colorSelect) {
-      colorSelect.addEventListener("change", () => {
-        const selectedColor = colorSelect.value.toLowerCase();
-        updateSlides(selectedColor);
-      });
-
-      // Запуск при завантаженні
-      updateSlides(colorSelect.value.toLowerCase());
+      colorSelect.addEventListener("change", () => updateSlides(colorSelect.value));
+      updateSlides(colorSelect.value); // стартовий фільтр
     }
   });
 </script>
@@ -136,60 +125,15 @@
 {
   "name": "Product Gallery Swiper",
   "settings": [
-    {
-      "type": "range",
-      "id": "slides_mobile",
-      "label": "Slides (mobile)",
-      "min": 1,
-      "max": 3,
-      "step": 1,
-      "default": 1
-    },
-    {
-      "type": "range",
-      "id": "slides_tablet",
-      "label": "Slides (tablet)",
-      "min": 1,
-      "max": 4,
-      "step": 1,
-      "default": 2
-    },
-    {
-      "type": "range",
-      "id": "slides_desktop",
-      "label": "Slides (desktop)",
-      "min": 1,
-      "max": 5,
-      "step": 1,
-      "default": 3
-    },
-    {
-      "type": "range",
-      "id": "space_between",
-      "label": "Space between",
-      "min": 0,
-      "max": 40,
-      "step": 5,
-      "default": 20
-    },
-    {
-      "type": "checkbox",
-      "id": "show_pagination",
-      "label": "Show pagination",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "show_navigation",
-      "label": "Show navigation",
-      "default": true
-    }
+    { "type": "range", "id": "slides_mobile",  "label": "Slides (mobile)",  "min": 1, "max": 3, "step": 1, "default": 1 },
+    { "type": "range", "id": "slides_tablet",  "label": "Slides (tablet)",  "min": 1, "max": 4, "step": 1, "default": 2 },
+    { "type": "range", "id": "slides_desktop", "label": "Slides (desktop)", "min": 1, "max": 5, "step": 1, "default": 3 },
+    { "type": "range", "id": "space_between",  "label": "Space between",   "min": 0, "max": 40, "step": 5, "default": 20 },
+    { "type": "checkbox", "id": "show_pagination", "label": "Show pagination", "default": true },
+    { "type": "checkbox", "id": "show_navigation", "label": "Show navigation", "default": true }
   ],
   "presets": [
-    {
-      "name": "Swiper Gallery",
-      "category": "Custom"
-    }
+    { "name": "Swiper Gallery", "category": "Custom" }
   ]
 }
 {% endschema %}
