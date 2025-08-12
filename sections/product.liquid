@@ -1,158 +1,340 @@
 {% comment %}
-  Цей шаблон використовується для сторінки продукту:
-  - показує зображення
-  - фільтрацію за кольором
-  - форму покупки
+  Product page: grid gallery + in-gallery color picker + form + accordion
+  • Click image -> open color panel; choose color -> filter gallery + sync Color select + set variant id
+  • Accordion: uses your metafields custom.accordion_title_1 / custom.accordion_content_1 split by "|"
 {% endcomment %}
 
 <style>
-.product-images{
-  padding:10px;
-  background-color: #fff;
-  margin: 0 auto;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
+  .product-layout{max-width:1140px;margin:0 auto;padding:16px;display:grid;gap:24px}
+  @media (min-width:1024px){.product-layout{grid-template-columns:1fr 420px;align-items:start}}
 
-.product-image{
-  border-radius:8px;
-  width:300px;
-  height:300px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
+  /* GALLERY GRID */
+  .product-images{position:relative;display:grid;grid-template-columns:1fr;gap:10px;background:#fff;padding:10px;border-radius:12px}
+  @media (min-width:768px){.product-images{grid-template-columns:repeat(2,1fr)}}
+  @media (min-width:1024px){.product-images{grid-template-columns:repeat(3,1fr)}}
 
-  .product-details-wrapper {
-    background-color: #f0f8ff;
-    padding: 20px 30px;
-    margin: 40px auto;
-    border-radius: 12px;
-    max-width: 800px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-  }
+  .product-image-wrap{cursor:pointer;border-radius:8px;overflow:hidden;box-shadow:0 8px 16px rgba(0,0,0,.06);background:#f6f7f8}
+  .product-image{display:block;width:100%;height:300px;object-fit:contain;background:#fff}
+  .pg-hidden{display:none!important}
+  .product-image-wrap.pg-active{outline:3px solid var(--pg-border,#111);outline-offset:-3px}
 
-  .product-title {
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
+  /* In-gallery color panel (no separate trigger button) */
+  .pg-color-panel{position:absolute;top:8px;right:8px;z-index:6;width:260px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px}
+  .pg-color-panel[hidden]{display:none}
+  .pg-color-panel__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .pg-color-panel__close{border:none;background:transparent;font-size:18px;line-height:1;cursor:pointer}
+  .pg-swatches{display:flex;flex-wrap:wrap;gap:8px}
+  .pg-swatch{display:flex;align-items:center;gap:6px;border:1px solid #e5e7eb;background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer;font-size:12px}
+  .pg-swatch.is-active{border-color:#111}
+  .pg-swatch__dot{width:14px;height:14px;border-radius:50%;background:#eee;border:1px solid #ddd}
+  .pg-swatch__label{white-space:nowrap}
 
-  .product-price {
-    font-size: 20px;
-    color: #4caf50;
-    margin-bottom: 10px;
-  }
+  /* RIGHT COLUMN */
+  .product-details-wrapper{background:#f0f8ff;padding:20px 30px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.1)}
+  .product-title{font-size:28px;font-weight:700;margin-bottom:10px}
+  .product-price{font-size:20px;color:#4caf50;margin-bottom:10px}
+  .product-description{color:#555;margin-bottom:20px}
+  .product-color label{font-weight:600;margin-right:8px}
+  .product-color select,.product-form select,.product-form input[type="text"]{padding:8px 12px;font-size:16px;border-radius:6px;border:1px solid #ccc;margin-bottom:12px;margin-right:10px}
+  .product-form input[type="submit"]{background:#0077cc;color:#fff;padding:10px 16px;font-size:16px;border:none;border-radius:6px;cursor:pointer;transition:background-color .2s}
+  .product-form input[type="submit"]:hover{background:#005fa3}
 
-  .product-description {
-    color: #555;
-    margin-bottom: 20px;
-  }
-
-  .product-color label {
-    font-weight: 600;
-    margin-right: 8px;
-  }
-
-  .product-color select,
-  .product-form select,
-  .product-form input[type="text"] {
-    padding: 8px 12px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin-bottom: 12px;
-    margin-right: 10px;
-  }
-
-  .product-form input[type="submit"] {
-    background-color: #0077cc;
-    color: white;
-    padding: 10px 16px;
-    font-size: 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
-  }
-
-  .product-form input[type="submit"]:hover {
-    background-color: #005fa3;
-  }
-
-  @media screen and (min-width: 768px) {
-    .product-images{
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-  }
-
-    @media screen and (min-width: 1024px) {
-    .product-images{
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      
-    }
-  }
+  /* ACCORDION */
+  .prod-accordion{margin-top:16px;border-top:1px solid #e5e7eb}
+  .prod-acc-item{border-bottom:1px solid #e5e7eb}
+  .prod-acc-item summary{list-style:none;cursor:pointer;padding:14px 0;font-weight:600}
+  .prod-acc-item summary::-webkit-details-marker{display:none}
+  .prod-acc-body{padding:0 0 14px 0;color:#555}
 </style>
 
+{%- assign color_option = product.options_by_name['Color'] | default: product.options_by_name['Колір'] -%}
 
-<div class="product-images">
-  {% for image in product.images %}
-    {% render 'image', class: 'product-image', image: image %}
-  {% endfor %}
-</div>
+<div class="product-layout">
 
+  <!-- LEFT: GALLERY -->
+  <div class="product-images" id="gallery-{{ section.id }}">
+    {%- for image in product.images -%}
+      {%- assign alt_text = image.alt | default: '' -%}
+      {%- assign lower_alt = alt_text | downcase -%}
+      {%- assign data_color = '' -%}
 
+      {%- if data_color == blank and lower_alt contains 'color:' -%}
+        {%- assign parts = lower_alt | split: 'color:' -%}
+        {%- assign after = parts | last | strip -%}
+        {%- assign data_color = after | split: '|' | first | split: ']' | first | strip -%}
+      {%- elsif data_color == blank and lower_alt contains '[color=' -%}
+        {%- assign parts2 = lower_alt | split: '[color=' -%}
+        {%- assign after2 = parts2 | last | strip -%}
+        {%- assign data_color = after2 | split: ']' | first | strip -%}
+      {%- endif -%}
 
-<div class="product-details-wrapper">
-  <div class="product-info">
-    <h1 class="product-title">{{ product.title }}</h1>
-    <p class="product-price">{{ product.price | money }}</p>
-    <p class="product-description">{{ product.description }}</p>
-  </div>
+      {%- if data_color == blank and color_option -%}
+        {%- for val in color_option.values -%}
+          {%- assign val_low = val | downcase -%}
+          {%- if lower_alt contains val_low -%}{%- assign data_color = val -%}{%- break -%}{%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
 
-  {% if product.options_by_name['Color'] %}
-    <div class="product-color">
-      <label for="Color">Color:</label>
-      <select name="options[Color]" id="Color">
-        {% for value in product.options_by_name['Color'].values %}
-          <option value="{{ value | escape }}">{{ value }}</option>
-        {% endfor %}
-      </select>
+      <div class="product-image-wrap" data-click="color-panel" data-color="{{ data_color | escape }}">
+        {% render 'image', class: 'product-image', image: image %}
+      </div>
+    {%- endfor -%}
+
+    <!-- Color panel (opens on image click) -->
+    <div id="pg-color-panel-{{ section.id }}" class="pg-color-panel" hidden>
+      <div class="pg-color-panel__header">
+        <strong>Select color</strong>
+        <button class="pg-color-panel__close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="pg-swatches"><!-- JS builds from Color select --></div>
     </div>
-  {% endif %}
-
-  <div class="product-form">
-    {% form 'product', product %}
-      {% assign current_variant = product.selected_or_first_available_variant %}
-      <select name="id">
-        {% for variant in product.variants %}
-          <option
-            value="{{ variant.id }}"
-            {% if variant == current_variant %}
-              selected="selected"
-            {% endif %}
-          >
-            {{ variant.title }} - {{ variant.price | money }}
-          </option>
-        {% endfor %}
-      </select>
-
-      <input type="text" name="quantity" min="1" value="1">
-      <input type="submit" value="Add to cart">
-      {{ form | payment_button }}
-    {% endform %}
   </div>
+
+  <!-- RIGHT: CARD + FORM -->
+  <div class="product-details-wrapper">
+    <div class="product-info">
+      <h1 class="product-title">{{ product.title }}</h1>
+      <p class="product-price">{{ product.price | money }}</p>
+      <p class="product-description">{{ product.description }}</p>
+    </div>
+
+    {% if color_option %}
+      <div class="product-color">
+        <label for="Color">Color:</label>
+        <select name="options[{{ color_option.name }}]" id="Color">
+          {% for value in color_option.values %}
+            <option value="{{ value | escape }}">{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% endif %}
+
+    <div class="product-form">
+      {% form 'product', product %}
+        {% assign current_variant = product.selected_or_first_available_variant %}
+        <select name="id" id="VariantIdSelect-{{ section.id }}">
+          {% for variant in product.variants %}
+            <option value="{{ variant.id }}" {% if variant == current_variant %}selected="selected"{% endif %}>
+              {{ variant.title }} - {{ variant.price | money }}
+            </option>
+          {% endfor %}
+        </select>
+        <input type="text" name="quantity" min="1" value="1">
+        <input type="submit" value="Add to cart">
+        {{ form | payment_button }}
+      {% endform %}
+    </div>
+
+{%- comment -%} ACCORDION — твої метафілди (split by "|") {%- endcomment -%}
+{% assign raw_titles = product.metafields.custom.accordion_title_1.value | default: product.metafields.custom.accordion_title_1 %}
+{% assign raw_bodies = product.metafields.custom.accordion_content_1.value | default: product.metafields.custom.accordion_content_1 %}
+
+{% assign titles_list = raw_titles | default: '' | split: '|' %}
+{% assign texts_list  = raw_bodies | default: '' | split: '|' %}
+
+<div id="prod-accordion-{{ section.id }}" class="prod-accordion"
+     data-multiple="{{ section.settings.acc_multiple | default: false }}">
+  {%- assign printed = 0 -%}
+  {% for t in titles_list %}
+    {% assign idx = forloop.index0 %}
+    {% assign b = texts_list[idx] %}
+    {% assign t_clean = t | strip %}
+    {% assign b_clean = b | strip %}
+    {% if t_clean != blank and b_clean != blank %}
+      <details class="prod-acc-item">
+        <summary class="prod-acc-header">{{ t_clean }}</summary>
+        <div class="prod-acc-body">{{ b_clean | newline_to_br }}</div>
+      </details>
+      {%- assign printed = printed | plus: 1 -%}
+    {% endif %}
+  {% endfor %}
+
+  {% if printed == 0 and product.description != blank %}
+    <details class="prod-acc-item">
+      <summary>Description</summary>
+      <div class="prod-acc-body">{{ product.description }}</div>
+    </details>
+  {% endif %}
 </div>
 
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var gallery  = document.getElementById('gallery-{{ section.id }}');
+  if (!gallery) return;
+
+  var panel    = document.getElementById('pg-color-panel-{{ section.id }}');
+  var swWrap   = panel.querySelector('.pg-swatches');
+  var closeBtn = panel.querySelector('.pg-color-panel__close');
+  var wraps    = gallery.querySelectorAll('.product-image-wrap');
+
+  var idSelect = document.getElementById('VariantIdSelect-{{ section.id }}');
+  // main Color select
+  var colorSelect = document.getElementById('Color') || (function(){
+    var all = document.querySelectorAll('select[name^="options["]');
+    for (var i=0;i<all.length;i++){
+      var n = all[i].getAttribute('name')||'';
+      var key = n.substring(n.indexOf('[')+1, n.indexOf(']'))||'';
+      var low = key.toLowerCase();
+      if (low==='color' || low==='колір') return all[i];
+    }
+    return null;
+  })();
+
+  function norm(v){ return (v||'').toString().trim().toLowerCase(); }
+
+  // Build swatches from Color select (reliable source)
+  function getColorsFromSelect(){
+    var out=[]; if(!colorSelect) return out;
+    Array.prototype.forEach.call(colorSelect.options, function(o){
+      var v=(o.value||'').trim(); if(v && out.indexOf(v)===-1) out.push(v);
+    });
+    return out;
+  }
+  function ensureSwatches(){
+    swWrap.innerHTML = '';
+    var colors = getColorsFromSelect();
+    colors.forEach(function(c){
+      var btn = document.createElement('button');
+      btn.type='button'; btn.className='pg-swatch'; btn.setAttribute('data-color', c);
+      btn.innerHTML = '<span class="pg-swatch__dot"></span><span class="pg-swatch__label">'+c+'</span>';
+      swWrap.appendChild(btn);
+    });
+  }
+  ensureSwatches();
+
+  // If images miss data-color, infer from ALT by matching Color options
+  function enrichDataColor(){
+    var colors = getColorsFromSelect().map(function(c){ return {raw:c, lc:c.toLowerCase()}; });
+    Array.prototype.forEach.call(wraps, function(w){
+      var dc = (w.getAttribute('data-color')||'').trim();
+      if (dc) return;
+      var img = w.querySelector('img');
+      var alt = (img && img.alt || '').toLowerCase();
+      var hit = colors.find(function(x){ return alt.indexOf(x.lc) > -1; });
+      if (hit) w.setAttribute('data-color', hit.raw);
+    });
+  }
+  enrichDataColor();
+
+  function setActiveSwatch(color){
+    var lc = norm(color);
+    swWrap.querySelectorAll('.pg-swatch').forEach(function(btn){
+      var c = norm(btn.getAttribute('data-color'));
+      btn.classList.toggle('is-active', c===lc);
+    });
+  }
+
+  var colorMap = {red:'red',blue:'blue',green:'green',black:'#111',white:'#ddd',yellow:'gold',orange:'orange',brown:'#8b5a2b',beige:'beige',pink:'pink',purple:'purple',grey:'#9aa0a6',gray:'#9aa0a6'};
+  function filterByColor(color){
+    var t = norm(color), any=false, border = colorMap[t] || '#111';
+    Array.prototype.forEach.call(wraps, function(w){
+      var c = norm(w.getAttribute('data-color'));
+      var show = c && c===t;
+      w.classList.toggle('pg-hidden', !show);
+      if (show){ any=true; w.style.setProperty('--pg-border', border); w.classList.add('pg-active'); }
+      else { w.classList.remove('pg-active'); }
+    });
+    if (!any){ Array.prototype.forEach.call(wraps, function(w){ w.classList.remove('pg-hidden','pg-active'); w.style.removeProperty('--pg-border'); }); }
+  }
+
+  var PRODUCT_OPTIONS = {{ product.options | json }};
+  var VARIANTS        = {{ product.variants | json }};
+  var COLOR_INDEX     = (function(){var i=-1;PRODUCT_OPTIONS.forEach(function(o,idx){var l=(o||'').toLowerCase();if(l==='color'||l==='колір') i=idx;});return i;})();
+  function pickVariantId(desiredColor){
+    if (COLOR_INDEX<0) return null;
+    var desired = [];
+    for (var i=0;i<PRODUCT_OPTIONS.length;i++){
+      var opt = PRODUCT_OPTIONS[i], val='';
+      var sel = document.querySelector('select[name="options['+opt+']"]') ||
+                document.querySelector('select[name="options['+opt.toLowerCase()+']"]');
+      if (sel) val = sel.value;
+      if (i===COLOR_INDEX && desiredColor!=null) val = desiredColor;
+      desired[i]=val;
+    }
+    var match = VARIANTS.find(function(v){
+      for (var i=0;i<PRODUCT_OPTIONS.length;i++){
+        var a=norm(v.options[i]), b=norm(desired[i]);
+        if (b && a!==b) return false;
+      } return true;
+    }) || VARIANTS.find(function(v){ return norm(v.options[COLOR_INDEX])===norm(desired[COLOR_INDEX]); });
+    return match ? match.id : null;
+  }
+
+  /* Open panel by clicking any image */
+  function openPanel(){ panel.hidden=false; }
+  function closePanel(){ panel.hidden=true; }
+  gallery.addEventListener('click', function(e){
+    var wrap = e.target.closest('[data-click="color-panel"]');
+    if (!wrap || !gallery.contains(wrap)) return;
+    var a = e.target.closest('a'); if (a && wrap.contains(a)) e.preventDefault();
+    var c = wrap.getAttribute('data-color') || '';
+    openPanel();
+    if (c) setActiveSwatch(c);
+  });
+
+  /* Click on swatch -> sync select + set variant + filter + close */
+  swWrap.addEventListener('click', function(e){
+    var btn = e.target.closest('.pg-swatch'); if (!btn) return;
+    var color = btn.getAttribute('data-color') || '';
+    if (colorSelect){
+      Array.prototype.some.call(colorSelect.options, function(opt,i){
+        if (norm(opt.value)===norm(color)){ colorSelect.selectedIndex=i; return true; }
+      });
+      colorSelect.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+    var vid = pickVariantId(color);
+    if (vid && idSelect){ idSelect.value = String(vid); idSelect.dispatchEvent(new Event('change',{bubbles:true})); }
+    setActiveSwatch(color);
+    filterByColor(color);
+    closePanel();
+  });
+
+  closeBtn.addEventListener('click', closePanel);
+  document.addEventListener('click', function(e){
+    if (panel.hidden) return;
+    if (!panel.contains(e.target) && !e.target.closest('[data-click="color-panel"]')) closePanel();
+  });
+
+  /* Manual Color select change */
+  if (colorSelect){
+    colorSelect.addEventListener('change', function(e){
+      var color = e.target.value || '';
+      var vid = pickVariantId(color);
+      if (vid && idSelect){ idSelect.value = String(vid); idSelect.dispatchEvent(new Event('change',{bubbles:true})); }
+      setActiveSwatch(color);
+      filterByColor(color);
+    });
+    /* Initial state */
+    setActiveSwatch(colorSelect.value);
+    filterByColor(colorSelect.value);
+  }
+
+  /* Accordion: allow only one open if setting is false */
+  (function(){
+    var root = document.getElementById('prod-accordion-{{ section.id }}');
+    if(!root) return;
+    var multiple = root.dataset.multiple === 'true';
+    root.addEventListener('toggle', function(e){
+      var item = e.target;
+      if(item.tagName.toLowerCase() !== 'details' || !item.open || multiple) return;
+      root.querySelectorAll('details[open]').forEach(function(d){
+        if(d !== item) d.removeAttribute('open');
+      });
+    });
+  })();
+})();
+</script>
 
 {% schema %}
 {
   "name": "t:general.product",
-  "settings": [],
-  "disabled_on": {
-    "groups": ["header", "footer"]
-  }
+  "settings": [
+    { "type": "checkbox", "id": "acc_multiple", "label": "Accordion: allow multiple open", "default": false }
+  ],
+  "disabled_on": { "groups": ["header", "footer"] }
 }
 {% endschema %}
