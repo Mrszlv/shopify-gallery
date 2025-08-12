@@ -15,7 +15,6 @@
     },
     "gallery": {
       "type": "product-gallery",
-      "disabled": true,
       "settings": {
         "slides_mobile": 1,
         "slides_tablet": 2,
@@ -27,7 +26,6 @@
     },
     "accordion": {
       "type": "accordion",
-      "disabled": true,
       "settings": {
         "allow_multiple": true
       }
