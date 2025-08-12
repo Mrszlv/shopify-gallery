@@ -7,7 +7,6 @@
  * made to this file may be overwritten.
  * ------------------------------------------------------------
  */
-
 {
   "sections": {
     "main": {
@@ -15,14 +14,28 @@
       "settings": {}
     },
     "gallery": {
-      "type": "product-gallery"
+      "type": "product-gallery",
+      "disabled": true,
+      "settings": {
+        "slides_mobile": 1,
+        "slides_tablet": 2,
+        "slides_desktop": 3,
+        "space_between": 20,
+        "show_pagination": true,
+        "show_navigation": true
+      }
     },
     "accordion": {
       "type": "accordion",
+      "disabled": true,
       "settings": {
         "allow_multiple": true
       }
     }
   },
-  "order": ["main", "gallery", "accordion"]
+  "order": [
+    "main",
+    "gallery",
+    "accordion"
+  ]
 }
